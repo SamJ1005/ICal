@@ -1,0 +1,2080 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+select,
+input {
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:focus,
+button:focus-visible,
+select:focus {
+  outline: none;
+}
+
+/* ========================================
+   THEME VARIABLES & VISUAL EFFECTS
+   - iOS Glassy Aesthetics with Neomorphic Depth
+======================================== */
+
+:root {
+  /* Light Theme (iOS Glass Standard) */
+  --blue-primary: #0a66ff;
+  --blue-hover: #1f75ff;
+  --blue-glow: rgba(10, 102, 255, 0.35);
+  --blue-utility-bg: rgba(10, 102, 255, 0.12);
+  --blue-utility-text: #0a66ff;
+  --blue-utility-hover: rgba(10, 102, 255, 0.22);
+
+  --sci-btn-bg: rgba(10, 102, 255, 0.08);
+  --sci-btn-text: #0a66ff;
+
+  --background: #edf2f7;
+  --calculator-bg: rgba(255, 255, 255, 0.88);
+  --calculator-border: rgba(255, 255, 255, 0.65);
+  --display-bg: rgba(243, 247, 252, 0.85);
+
+  --number-bg: #ffffff;
+  --number-text: #0f172a;
+  --number-hover: #f1f5f9;
+
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+
+  --theme-btn-bg: rgba(226, 232, 240, 0.85);
+  --theme-btn-text: #0f172a;
+  --theme-badge-bg: #ffffff;
+
+  --cursor-color: #0a66ff;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 16px 42px rgba(10, 102, 255, 0.1), 0 4px 14px rgba(0, 0, 0, 0.05);
+  --glass-blur: blur(24px);
+}
+
+body[data-theme="dark"] {
+  /* Dark Theme (Cyber Glass Standard) */
+  --green-primary: #34e8a0;
+  --green-hover: #2cd690;
+  --green-glow: rgba(52, 232, 160, 0.35);
+  --green-utility-bg: rgba(52, 232, 160, 0.16);
+  --green-utility-text: #ffffff;
+  --green-utility-hover: rgba(52, 232, 160, 0.26);
+
+  --sci-btn-bg: rgba(52, 232, 160, 0.12);
+  --sci-btn-text: #ffffff;
+
+  --background: #080c14;
+  --calculator-bg: rgba(18, 24, 38, 0.92);
+  --calculator-border: rgba(255, 255, 255, 0.12);
+  --display-bg: rgba(13, 18, 29, 0.88);
+
+  --number-bg: rgba(28, 36, 54, 0.9);
+  --number-text: #ffffff;
+  --number-hover: rgba(38, 48, 70, 0.95);
+
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+
+  --theme-btn-bg: rgba(30, 41, 59, 0.85);
+  --theme-btn-text: #ffffff;
+  --theme-badge-bg: #2d3b55;
+
+  --cursor-color: #28D892;
+
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 18px 50px rgba(0, 0, 0, 0.65), 0 0 35px rgba(40, 216, 146, 0.1);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  background: var(--background);
+  color: var(--text-primary);
+
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* ========================================
+   GLOBAL SYNCHRONIZED THEME TRANSITIONS
+======================================== */
+
+/* Synchronized theme transition: all components switch together simultaneously */
+body,
+#root,
+.calculator,
+.calculator-top-section,
+.calculator-header,
+.display,
+.input-expression,
+.answer-display,
+.keypad button,
+.converter-keypad button,
+.theme-toggle-btn,
+.header-icon-btn,
+.history-trigger-btn,
+.nav-arrow-btn,
+.history-drawer,
+.history-card,
+.conv-card,
+.gas-calculator-display,
+.gas-field-chip {
+  transition:
+    background-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* ========================================
+   CALCULATOR CONTAINER & TOP SECTION
+======================================== */
+
+.calculator {
+  width: 100%;
+  max-width: 440px;
+
+  background: var(--calculator-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+
+  border: 1px solid var(--calculator-border);
+  border-radius: 30px;
+  padding: 18px 16px;
+
+  box-shadow: var(--shadow-md);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calculator-top-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Smooth Tab Transition */
+.tab-view-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  overflow: hidden;
+  animation: tabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0.65;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calculator:has(.converter-container) {
+  justify-content: flex-start !important;
+}
+
+/* ========================================
+   HEADER BAR (Mode Dropdown at Left, Icons at Right)
+======================================== */
+
+.calculator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 0 2px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Mode Dropdown Selector Pill & Custom Menu */
+.mode-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 100;
+}
+
+.mode-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--theme-btn-bg);
+  border: 1px solid var(--calculator-border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 12px 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.12s ease;
+}
+
+.mode-dropdown-trigger:active {
+  transform: scale(0.97);
+}
+
+.mode-dropdown-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+.mode-dropdown-label {
+  line-height: 1;
+}
+
+.mode-dropdown-arrow {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+  margin-left: 1px;
+}
+
+.mode-dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Glass Floating Dropdown Menu */
+.mode-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 155px;
+  background: var(--calculator-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--calculator-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25), 0 3px 10px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 1000;
+  animation: modeMenuFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modeMenuFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mode-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.mode-menu-item:hover,
+.mode-menu-item:focus {
+  background: var(--theme-btn-bg);
+}
+
+.mode-menu-item.active {
+  background: var(--theme-btn-bg);
+  color: var(--cursor-color);
+  font-weight: 700;
+}
+
+.menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.menu-item-text {
+  flex: 1;
+}
+
+.menu-item-check {
+  color: var(--cursor-color);
+  margin-left: auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Stable Header Icon Buttons (36x36 Fixed) */
+.header-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+  flex-shrink: 0;
+  position: relative;
+  transition: transform 0.15s ease, background-color 0.24s ease, border-color 0.24s ease, color 0.24s ease !important;
+}
+
+.header-icon-btn:active {
+  transform: scale(0.92);
+}
+
+.history-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* History Trigger Button */
+.history-trigger-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .history-trigger-btn:hover {
+    transform: translateY(-1px) scale(1.05);
+  }
+}
+
+.history-trigger-btn:active {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.history-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 11px;
+  height: 36px;
+  border: 1px solid var(--calculator-border);
+  border-radius: 20px;
+  background: var(--theme-btn-bg);
+  color: var(--theme-btn-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.theme-toggle:active {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.theme-toggle-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--theme-badge-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-badge.light {
+  color: #eab308;
+}
+
+.theme-toggle-badge.dark {
+  color: #38bdf8;
+}
+
+.theme-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ========================================
+   MODE SEGMENTED CONTROL
+======================================== */
+
+.mode-segmented-bar {
+  display: flex;
+  background: var(--theme-btn-bg);
+  border-radius: 14px;
+  padding: 3px;
+  margin-bottom: 10px;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid var(--calculator-border);
+  flex-shrink: 0;
+}
+
+.mode-segment-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 11px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mode-segment-btn.active {
+  background: var(--calculator-bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+}
+
+/* ========================================
+   DISPLAY SCREEN & NAVIGATION
+======================================== */
+
+.display {
+  width: 100%;
+  flex: 0 0 auto;
+  min-height: 120px;
+  max-height: 140px;
+  margin-bottom: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--display-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid var(--calculator-border);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  transition:
+    min-height 0.16s ease,
+    padding 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+/* Scientific Mode: Balanced Display area (Not too large, not too short) */
+.display.scientific-display {
+  flex: 0 0 auto !important;
+  min-height: 95px !important;
+  max-height: 110px !important;
+  padding: 8px 14px !important;
+  margin-bottom: 6px !important;
+}
+
+.scientific-display .input-expression {
+  min-height: 28px !important;
+  font-size: 20px !important;
+}
+
+.scientific-display .answer-display {
+  min-height: 36px !important;
+}
+
+.scientific-display .answer-display.preview {
+  font-size: 24px !important;
+}
+
+.scientific-display .answer-display.evaluated {
+  font-size: 32px !important;
+}
+
+.display-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 16px;
+}
+
+.nav-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.angle-mode-pill {
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+/* Line 1: Interactive Expression */
+.input-expression {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: clamp(26px, 6.2vw, 32px);
+  line-height: 1.2;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  cursor: text;
+  touch-action: pan-x;
+  padding: 2px 0;
+  transition: opacity 0.25s ease, color 0.25s ease;
+}
+
+.input-expression::-webkit-scrollbar {
+  display: none;
+}
+
+.input-expression.active {
+  opacity: 1;
+  color: var(--text-primary);
+  font-weight: 700; /* Bold in both light and dark mode */
+  font-size: clamp(34px, 8.5vw, 44px); /* Increased current input font size */
+}
+
+.input-expression.dimmed {
+  opacity: 0.45;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: clamp(20px, 4.8vw, 24px);
+}
+
+.input-char {
+  display: inline-flex;
+  font-weight: 700; /* Bold symbols & numbers */
+  align-items: center;
+  position: relative;
+  padding: 2px 0.5px;
+  cursor: text;
+}
+
+.navigation-line {
+  display: inline-block;
+  width: 3px;
+  height: 1.25em;
+  background-color: var(--cursor-color);
+  margin: 0 1.5px;
+  border-radius: 2px;
+  vertical-align: middle;
+  animation: cursorBlink 0.9s step-end infinite;
+  box-shadow: 0 0 8px var(--cursor-color);
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ========================================
+   LINE 2: ANSWER ROW (Left/Right Buttons Relocated)
+======================================== */
+
+.answer-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nav-arrows-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.nav-arrows-inline .nav-arrow-btn {
+  width: 32px;
+  height: 28px;
+  border: 1px solid var(--calculator-border);
+  border-radius: 8px;
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s ease;
+}
+
+.nav-arrows-inline .nav-arrow-btn:active {
+  transform: translateY(-2px) scale(1.05);
+}
+
+/* Answer / Live Preview */
+.answer-display {
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: right;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.answer-display::-webkit-scrollbar {
+  display: none;
+}
+
+.answer-display.preview {
+  opacity: 0.82;
+  color: var(--text-secondary);
+  font-size: clamp(22px, 5.2vw, 26px);
+  font-weight: 500;
+}
+
+.answer-display.evaluated {
+  opacity: 1;
+  color: var(--text-primary);
+  font-size: clamp(42px, 10vw, 54px); /* Increased prominent result font size */
+  font-weight: 700;
+}
+
+/* ========================================
+   IOS GLASS BUTTONS WITH LIFT-UP ON-CLICK
+======================================== */
+
+.keypad button,
+.converter-keypad button {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  font-family: inherit;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  /* iOS Glass Surface */
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.65);
+
+  /* Smooth, springy iPhone-style pop feedback with cushioned release delay */
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1),
+    filter 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+/* iPhone Touch Down Pop-Up Effect (Expands big enough to fill padding space on all 4 sides) */
+.keypad button:active,
+.converter-keypad button:active {
+  transform: scale(1.12);
+  filter: brightness(1.18);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  z-index: 10;
+  transition:
+    transform 0.08s ease-out,
+    filter 0.08s ease-out;
+}
+
+/* Number buttons */
+body:not([data-theme="dark"]) .keypad button.number,
+body:not([data-theme="dark"]) .converter-keypad button.number {
+  background: linear-gradient(180deg, #ffffff 0%, #edf3fa 100%);
+  color: #000000 !important; /* Pure Black in Light Theme */
+  border: 1px solid rgba(210, 224, 240, 0.95);
+  box-shadow:
+    0 3px 10px rgba(0, 40, 100, 0.05),
+    inset 0 1px 1.5px #ffffff;
+  font-size: clamp(23px, 6vw, 29px);
+  font-weight: 700; /* Bold numbers */
+}
+
+body[data-theme="dark"] .keypad button.number,
+body[data-theme="dark"] .converter-keypad button.number {
+  background: linear-gradient(180deg, rgba(35, 45, 65, 0.92) 0%, rgba(22, 28, 42, 0.94) 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff !important; /* Pure White in Dark Theme */
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  font-size: clamp(23px, 6vw, 29px);
+  font-weight: 700; /* Bold numbers */
+}
+
+/* Utility buttons */
+body:not([data-theme="dark"]) .keypad button.utility,
+body:not([data-theme="dark"]) .converter-keypad button.utility {
+  background: linear-gradient(180deg, rgba(238, 245, 255, 0.98) 0%, rgba(222, 235, 255, 0.95) 100%);
+  color: #0a66ff !important; /* Clean, vibrant blue, not dark navy */
+  font-size: clamp(18px, 4.8vw, 23px);
+  font-weight: 700; /* Bold */
+}
+
+body[data-theme="dark"] .keypad button.utility,
+body[data-theme="dark"] .converter-keypad button.utility {
+  background: linear-gradient(180deg, rgba(52, 232, 160, 0.22) 0%, rgba(32, 203, 132, 0.22) 100%);
+  color: #ffffff !important; /* Pure White in Dark Theme */
+  border-color: rgba(52, 232, 160, 0.4);
+  font-size: clamp(18px, 4.8vw, 23px);
+  font-weight: 700; /* Bold */
+}
+
+/* Operator & Equals with slightly lessened opacity and refined glow */
+body:not([data-theme="dark"]) .keypad button.operator {
+  background: linear-gradient(180deg, rgba(26, 117, 255, 0.88) 0%, rgba(0, 92, 230, 0.88) 100%);
+  color: #ffffff !important;
+  font-size: clamp(28px, 7.2vw, 35px);
+  font-weight: 700; /* Bold symbol */
+  box-shadow:
+    0 4px 12px rgba(10, 102, 255, 0.25),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.45);
+}
+
+body:not([data-theme="dark"]) .keypad button.equals {
+  background: linear-gradient(180deg, rgba(26, 117, 255, 0.88) 0%, rgba(0, 92, 230, 0.88) 100%);
+  color: #ffffff !important;
+  font-size: clamp(30px, 7.8vw, 38px);
+  font-weight: 700; /* Bold symbol */
+  box-shadow:
+    0 4px 12px rgba(10, 102, 255, 0.25),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.45);
+}
+
+body[data-theme="dark"] .keypad button.operator {
+  background: linear-gradient(180deg, rgba(52, 232, 160, 0.82) 0%, rgba(32, 203, 132, 0.82) 100%);
+  color: #ffffff !important; /* Pure White in Dark Theme */
+  font-size: clamp(28px, 7.2vw, 35px);
+  font-weight: 700; /* Bold symbol */
+  box-shadow:
+    0 4px 14px rgba(52, 232, 160, 0.25),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
+}
+
+body[data-theme="dark"] .keypad button.equals {
+  background: linear-gradient(180deg, rgba(52, 232, 160, 0.82) 0%, rgba(32, 203, 132, 0.82) 100%);
+  color: #ffffff !important; /* Pure White in Dark Theme */
+  font-size: clamp(30px, 7.8vw, 38px);
+  font-weight: 700; /* Bold symbol */
+  box-shadow:
+    0 4px 14px rgba(52, 232, 160, 0.25),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
+}
+
+/* Scientific Functions */
+body:not([data-theme="dark"]) .keypad button.sci-fn {
+  background: linear-gradient(180deg, rgba(242, 247, 255, 0.98) 0%, rgba(230, 240, 255, 0.95) 100%);
+  color: #0a66ff !important; /* Clean, vibrant blue, not dark navy */
+  font-size: clamp(14px, 3.5vw, 17px);
+  font-weight: 700; /* Bold */
+}
+
+body[data-theme="dark"] .keypad button.sci-fn {
+  background: linear-gradient(180deg, rgba(38, 52, 75, 0.9) 0%, rgba(26, 36, 54, 0.9) 100%);
+  color: #ffffff !important; /* Pure White in Dark Theme */
+  font-size: clamp(14px, 3.5vw, 17px);
+  font-weight: 700; /* Bold */
+}
+
+/* ========================================
+   KEYPAD GRIDS
+======================================== */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+}
+
+/* Scientific Keypad Grid */
+.scientific-keypad {
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 5px !important;
+  justify-items: stretch !important;
+}
+
+.scientific-keypad button.sci-col-3 {
+  grid-column: 1 / span 3 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  justify-self: stretch !important;
+  border-radius: 24px !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+}
+
+.scientific-keypad button.sci-col-2 {
+  grid-column: 4 / span 2 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  justify-self: stretch !important;
+  border-radius: 24px !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+}
+
+/* ========================================
+   CONVERTER VIEW (Circular buttons & reduced row padding)
+======================================== */
+
+.converter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
+}
+
+.converter-category-scroll {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.converter-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.converter-category-tabs {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.converter-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 18px;
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.converter-tab-btn.active {
+  background: var(--text-primary);
+  color: var(--calculator-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-icon {
+  font-size: 13px;
+}
+
+.submode-switcher {
+  display: flex;
+  background: var(--theme-btn-bg);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.submode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+}
+
+.submode-btn.active {
+  background: var(--calculator-bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Display Card */
+.converter-display-card {
+  background: var(--display-bg);
+  border: 1px solid var(--calculator-border);
+  border-radius: 20px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.conv-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 4px;
+}
+
+.conv-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.conv-card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.conv-select {
+  padding: 4px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.conv-value-display {
+  font-size: clamp(26px, 7vw, 36px);
+  font-weight: 700;
+  color: var(--text-primary);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  word-break: break-all;
+  line-height: 1.15;
+}
+
+.conv-value-display.active-from {
+  color: var(--cursor-color);
+}
+
+.conv-value-display.result-to {
+  color: var(--text-primary);
+  opacity: 0.95;
+}
+
+.conv-swap-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+}
+
+.conv-swap-btn {
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s ease;
+}
+
+.conv-swap-btn:active {
+  transform: scale(1.08);
+}
+
+/* Converter On-Screen Circular Keypad */
+.converter-keypad {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+  align-items: center;
+  justify-items: center;
+  margin-top: auto;
+  width: 100%;
+}
+
+.converter-keypad button {
+  width: 100%;
+  max-width: 80px;
+  max-height: min(80px, 11.2vh);
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  font-size: clamp(22px, 5.8vw, 28px);
+  font-weight: 500;
+}
+
+.hex-keys-row {
+  display: flex;
+  gap: 5px;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.hex-key {
+  flex: 1;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ========================================
+   EIP-1559 BLOCKCHAIN GAS CALCULATOR UI
+======================================== */
+
+.gas-calculator-display {
+  background: var(--display-bg);
+  border: 1px solid var(--calculator-border);
+  border-radius: 18px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gas-presets-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.gas-preset-hint {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.gas-preset-chip {
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gas-preset-chip.active {
+  background: var(--text-primary);
+  color: var(--calculator-bg);
+}
+
+.gas-fields-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.gas-field-chip {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 3px;
+  border-radius: 8px;
+  border: 1px solid var(--calculator-border);
+  background: var(--number-bg);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gas-field-chip.active {
+  border-color: var(--cursor-color);
+  background: rgba(0, 85, 255, 0.12);
+}
+
+body[data-theme="dark"] .gas-field-chip.active {
+  background: rgba(40, 216, 146, 0.2);
+}
+
+.chip-lbl {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.chip-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gas-warning-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  text-align: center;
+  animation: fadeIn 0.2s ease;
+}
+
+body[data-theme="dark"] .gas-warning-banner {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.gas-summary-card {
+  background: rgba(0, 85, 255, 0.05);
+  border-radius: 12px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+body[data-theme="dark"] .gas-summary-card {
+  background: rgba(40, 216, 146, 0.08);
+}
+
+.gas-main-val {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gas-main-val .val.eth {
+  color: var(--blue-primary);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+body[data-theme="dark"] .gas-main-val .val.eth {
+  color: var(--green-primary);
+}
+
+.gas-units-subrow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.wei-val {
+  font-family: monospace;
+  font-size: 9.5px;
+  opacity: 0.9;
+}
+
+.gas-sub-val {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.gas-sub-val strong {
+  color: var(--text-primary);
+}
+
+.gas-fiat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 3px;
+  border-top: 1px dashed var(--calculator-border);
+  font-size: 10.5px;
+}
+
+.fiat-calc-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fiat-lbl {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.fiat-val {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.fiat-note {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+.fiat-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fiat-curr-toggle,
+.fiat-price-chip {
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.fiat-price-chip.active {
+  border-color: var(--cursor-color);
+  background: rgba(0, 85, 255, 0.15);
+}
+
+body[data-theme="dark"] .fiat-price-chip.active {
+  background: rgba(40, 216, 146, 0.25);
+}
+
+.gas-edu-toggle-btn {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  color: var(--text-secondary);
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.gas-edu-card {
+  background: var(--theme-btn-bg);
+  border: 1px solid var(--calculator-border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  animation: fadeIn 0.18s ease-out;
+}
+
+.gas-edu-card strong {
+  color: var(--text-primary);
+}
+
+/* ========================================
+   HISTORY DRAWER (Highlighted Timeline Day)
+======================================== */
+
+.history-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 999;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.history-drawer {
+  width: 100%;
+  max-width: 380px;
+  height: 100%;
+  background: var(--calculator-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-left: 1px solid var(--calculator-border);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.history-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-icon {
+  font-size: 18px;
+}
+
+.history-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.history-count-badge {
+  background: var(--theme-btn-bg);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-clear-btn {
+  border: none;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.history-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.history-close-btn:active {
+  transform: scale(0.92);
+}
+
+/* In-App Glass Confirmation Dialog */
+.inapp-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1001;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.inapp-confirm-modal {
+  width: 100%;
+  max-width: 320px;
+  background: var(--calculator-bg);
+  border: 1px solid var(--calculator-border);
+  border-radius: 20px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.inapp-confirm-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.inapp-confirm-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.inapp-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.inapp-confirm-btn {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.12s ease;
+}
+
+.inapp-confirm-btn:active {
+  transform: scale(0.96);
+}
+
+.inapp-confirm-btn.cancel {
+  background: var(--theme-btn-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--calculator-border);
+}
+
+.inapp-confirm-btn.confirm {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 2px;
+}
+
+.history-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Highlighted Timeline Day Header */
+.history-group-header {
+  display: flex;
+  align-items: center;
+  margin: 8px 0 4px;
+  padding-left: 2px;
+}
+
+.history-timeline-highlight {
+  background: var(--blue-primary);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--blue-glow);
+}
+
+body[data-theme="dark"] .history-timeline-highlight {
+  background: var(--green-primary);
+  color: #002d1b;
+  box-shadow: 0 2px 8px var(--green-glow);
+}
+
+.history-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 260px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.history-empty-icon {
+  font-size: 38px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.history-empty-text {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text-primary);
+}
+
+.history-empty-subtext {
+  font-size: 12px;
+  max-width: 200px;
+}
+
+/* History Card */
+.history-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--display-bg);
+  border: 1px solid var(--calculator-border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+
+.history-card:active {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.history-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-expression {
+  font-size: 13px;
+  color: var(--text-secondary);
+  word-break: break-all;
+  margin-bottom: 2px;
+}
+
+.history-result {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.history-card-btn.delete {
+  border: 1px solid var(--calculator-border);
+  background: var(--theme-btn-bg);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #ef4444;
+  cursor: pointer;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   - Mobile (<= 768px): Fixed screen, zero zoom, edge-to-edge
+======================================== */
+
+@media (min-width: 769px) {
+  #root {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+  }
+
+  .calculator {
+    width: 100%;
+    max-width: 440px;
+    border-radius: 28px;
+    padding: 20px 18px;
+    height: auto;
+    min-height: auto;
+  }
+
+  .keypad {
+    gap: 12px;
+  }
+
+  .keypad button {
+    height: 56px;
+    max-height: 56px;
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: auto;
+    border-radius: 14px !important;
+    font-size: 25px;
+  }
+
+  .scientific-keypad button {
+    height: 46px !important;
+    max-height: 46px !important;
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    background: var(--calculator-bg);
+  }
+
+  #root {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+  }
+
+  .calculator {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px calc(env(safe-area-inset-bottom, 0px) + 10px) 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  /* ========================================
+     10% / 30% / 60% DYNAMIC FRAME PROPORTIONS
+     - 10% Top Header (Theme, Mode, History)
+     - 30% Input-Output Display Area
+     - 60% Keyboard Input Area (Dynamic Square Grid)
+  ======================================== */
+
+  .calculator-header {
+    flex: 0 0 auto;
+    height: 46px;
+    min-height: 46px;
+    max-height: 48px;
+    margin-bottom: 2px;
+    padding: 0 4px;
+  }
+
+  .tab-view-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: calc(100% - 48px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    gap: 6px;
+  }
+
+  /* 30% Input-Output Display Area */
+  .display {
+    flex: 0 0 30% !important;
+    height: 30% !important;
+    min-height: 30% !important;
+    max-height: 30% !important;
+    margin-bottom: 0;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* Scientific Display: Exactly 30% of Area (No large empty space) */
+  .scientific-display {
+    flex: 0 0 30% !important;
+    height: 30% !important;
+    min-height: 30% !important;
+    max-height: 30% !important;
+    padding: 8px 12px !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  .scientific-display .input-expression {
+    min-height: 28px !important;
+    font-size: clamp(22px, 5.5vw, 28px) !important;
+  }
+
+  .scientific-display .answer-display {
+    min-height: 36px !important;
+  }
+
+  .scientific-display .answer-display.preview {
+    font-size: clamp(18px, 4.5vw, 22px) !important;
+  }
+
+  .scientific-display .answer-display.evaluated {
+    font-size: clamp(28px, 7vw, 36px) !important;
+  }
+
+  /* Basic Keypad: Fills Remaining Area Dynamically */
+  .keypad {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    justify-items: stretch;
+    align-items: stretch;
+  }
+
+  .keypad button {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: auto;
+    justify-self: stretch;
+    align-self: stretch;
+    border-radius: 9999px !important;
+    font-size: clamp(20px, 5.2vw, 26px);
+    padding: 0;
+  }
+
+  /* Scientific Keypad: Auto-scaled 7 Rows fitting remaining space without cut-off */
+  .scientific-keypad {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-rows: repeat(7, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    justify-items: stretch !important;
+    align-items: stretch !important;
+  }
+
+  .scientific-keypad button {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: auto !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    border-radius: 9999px !important;
+    font-size: clamp(12px, 3.2vw, 15px) !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+  }
+
+  /* 0 and = buttons in Scientific: Full Row Height & Proportional Capsule */
+  .scientific-keypad button.sci-col-3 {
+    grid-column: 1 / span 3 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    aspect-ratio: auto !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    border-radius: 9999px !important;
+    font-size: clamp(18px, 4.8vw, 22px) !important;
+    font-weight: 700 !important;
+  }
+
+  .scientific-keypad button.sci-col-2 {
+    grid-column: 4 / span 2 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    aspect-ratio: auto !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    border-radius: 9999px !important;
+    font-size: clamp(19px, 5vw, 24px) !important;
+    font-weight: 700 !important;
+  }
+
+  /* ========================================
+     CONVERTER VIEW: 45% DISPLAY / AUTO-SCALED KEYPAD (NO CUT-OFF)
+  ======================================== */
+  .converter-container {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .converter-category-scroll {
+    flex-shrink: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Exactly 45% Display Area in Converter (Content fills area) */
+  .converter-display-card {
+    flex: 0 0 45% !important;
+    height: 45% !important;
+    min-height: 45% !important;
+    max-height: 45% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+  }
+
+  .converter-display-card .conv-card {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    padding: 4px 6px !important;
+  }
+
+  .converter-display-card .conv-value-display {
+    font-size: clamp(24px, 6.8vw, 34px) !important;
+    font-weight: 700 !important;
+    min-height: 36px !important;
+  }
+
+  .gas-calculator-display {
+    flex: 0 0 45% !important;
+    height: 45% !important;
+    min-height: 45% !important;
+    max-height: 45% !important;
+    overflow-y: auto !important;
+  }
+
+  /* Converter Keypad: Auto-scaled 4 Rows fitting remaining space without cut-off */
+  .converter-keypad {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    grid-template-rows: repeat(4, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    justify-items: stretch !important;
+    align-items: stretch !important;
+  }
+
+  .converter-keypad button {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: auto !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    border-radius: 9999px !important;
+    font-size: clamp(18px, 4.8vw, 24px) !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+  }
+
+  .history-drawer {
+    max-width: 100%;
+    border-left: none;
+  }
+}
+
+/* Small mobile screens (<360px) */
+@media (max-width: 360px) {
+  .calculator {
+    padding: calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px) 8px;
+  }
+
+  .display {
+    min-height: 80px;
+    padding: 8px 10px;
+  }
+
+  .keypad {
+    gap: 6px;
+  }
+
+  .keypad button {
+    font-size: 19px;
+    max-height: min(68px, 10.5vh);
+  }
+
+  .scientific-keypad button {
+    max-height: 42px !important;
+    font-size: 12px !important;
+  }
+}
