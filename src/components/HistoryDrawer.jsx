@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
+import { formatExpressionWithCommas, formatNumberWithCommas } from "../utils/conversionUtils";
 
 function getTimelineCategory(ts) {
   const now = new Date();
@@ -39,8 +41,6 @@ export default function HistoryDrawer({
   onClearHistory,
   onDeleteHistoryItem
 }) {
-  if (!isOpen) return null;
-
   const [confirmState, setConfirmState] = React.useState({
     isOpen: false,
     title: "",
@@ -49,32 +49,12 @@ export default function HistoryDrawer({
     onConfirm: null
   });
 
-  const handleClearAll = () => {
-    setConfirmState({
-      isOpen: true,
-      title: "Clear All History?",
-      message: "This will permanently delete all saved calculations from history.",
-      confirmLabel: "Clear All",
-      onConfirm: () => {
-        onClearHistory();
-        setConfirmState({ isOpen: false });
-      }
-    });
-  };
-
-  const handleDeleteItem = (item, e) => {
-    e.stopPropagation();
-    setConfirmState({
-      isOpen: true,
-      title: "Remove Calculation?",
-      message: `Delete "${item.expression} = ${item.result}" from history?`,
-      confirmLabel: "Remove",
-      onConfirm: () => {
-        onDeleteHistoryItem(item.id);
-        setConfirmState({ isOpen: false });
-      }
-    });
-  };
+  // Ensure scroll stays at 0 when drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      window.scrollTo(0, 0);
+    }
+  }, [isOpen]);
 
   // Group history items by timeline category
   const groupedHistory = React.useMemo(() => {
@@ -96,9 +76,51 @@ export default function HistoryDrawer({
     }));
   }, [history]);
 
-  return (
-    <div className="history-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="history-drawer" onClick={(e) => e.stopPropagation()}>
+  if (!isOpen) return null;
+
+  const handleClearAll = () => {
+    setConfirmState({
+      isOpen: true,
+      title: "Clear All History?",
+      message: "This will permanently delete all saved calculations from history.",
+      confirmLabel: "Clear All",
+      onConfirm: () => {
+        onClearHistory();
+        setConfirmState({ isOpen: false });
+      }
+    });
+  };
+
+  const handleDeleteItem = (item, e) => {
+    e.stopPropagation();
+    const formattedExpr = formatExpressionWithCommas(item.expression);
+    const formattedRes = formatNumberWithCommas(item.result);
+    setConfirmState({
+      isOpen: true,
+      title: "Remove Calculation?",
+      message: `Delete "${formattedExpr} = ${formattedRes}" from history?`,
+      confirmLabel: "Remove",
+      onConfirm: () => {
+        onDeleteHistoryItem(item.id);
+        setConfirmState({ isOpen: false });
+      }
+    });
+  };
+
+  const drawerContent = (
+    <div
+      className="history-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      onTouchMove={(e) => {
+        if (e.target === e.currentTarget) e.preventDefault();
+      }}
+    >
+      <div
+        className="history-drawer"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Drawer Header */}
         <div className="history-header">
           <div className="history-title-group">
@@ -153,8 +175,12 @@ export default function HistoryDrawer({
                       title="Tap to restore calculation"
                     >
                       <div className="history-card-body">
-                        <div className="history-expression">{item.expression}</div>
-                        <div className="history-result">= {item.result}</div>
+                        <div className="history-expression">
+                          {formatExpressionWithCommas(item.expression)}
+                        </div>
+                        <div className="history-result">
+                          = {formatNumberWithCommas(item.result)}
+                        </div>
                       </div>
 
                       <button
@@ -175,18 +201,26 @@ export default function HistoryDrawer({
 
         {/* In-App Native-Style Confirmation Toast / Modal */}
         {confirmState.isOpen && (
-          <div className="inapp-confirm-backdrop" onClick={() => setConfirmState({ isOpen: false })}>
-            <div className="inapp-confirm-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="inapp-confirm-backdrop"
+            onClick={() => setConfirmState({ isOpen: false })}
+          >
+            <div
+              className="inapp-confirm-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3 className="inapp-confirm-title">{confirmState.title}</h3>
               <p className="inapp-confirm-message">{confirmState.message}</p>
               <div className="inapp-confirm-actions">
                 <button
+                  type="button"
                   className="inapp-confirm-btn cancel"
                   onClick={() => setConfirmState({ isOpen: false })}
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   className="inapp-confirm-btn confirm"
                   onClick={() => {
                     if (confirmState.onConfirm) confirmState.onConfirm();
@@ -201,4 +235,6 @@ export default function HistoryDrawer({
       </div>
     </div>
   );
+
+  return createPortal(drawerContent, document.body);
 }

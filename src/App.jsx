@@ -3,6 +3,7 @@ import HistoryDrawer from "./components/HistoryDrawer";
 import ConverterView from "./components/ConverterView";
 import BackspaceIcon from "./components/BackspaceIcon";
 import { playHapticFeedback } from "./utils/haptics";
+import { buildDisplayTokens, formatNumberWithCommas } from "./utils/conversionUtils";
 import "./App.css";
 
 const SIX_MONTHS_MS = 180 * 24 * 60 * 60 * 1000;
@@ -139,6 +140,59 @@ function App() {
     }
   }, [history]);
 
+  // Auto-switch between basic and scientific mode based on orientation on mobile devices
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+
+    const mql = window.matchMedia("(orientation: landscape)");
+
+    const handleOrientation = (isLandscape) => {
+      // Apply to mobile/touch screens or devices where orientation indicates mobile rotation
+      const isMobile =
+        window.innerWidth <= 1024 && (window.innerHeight <= 600 || window.innerWidth <= 600 || "ontouchstart" in window);
+
+      if (isMobile) {
+        if (isLandscape) {
+          setCalcMode((prev) => (prev === "conversion" ? prev : "scientific"));
+        } else {
+          setCalcMode((prev) => (prev === "conversion" ? prev : "basic"));
+        }
+      }
+    };
+
+    // Initial check
+    handleOrientation(mql.matches || window.innerWidth > window.innerHeight);
+
+    const onMqlChange = (e) => {
+      handleOrientation(e.matches);
+    };
+
+    if (mql.addEventListener) {
+      mql.addEventListener("change", onMqlChange);
+    } else if (mql.addListener) {
+      mql.addListener(onMqlChange);
+    }
+
+    const onResizeOrRotate = () => {
+      const isLandscape =
+        window.matchMedia("(orientation: landscape)").matches || window.innerWidth > window.innerHeight;
+      handleOrientation(isLandscape);
+    };
+
+    window.addEventListener("resize", onResizeOrRotate);
+    window.addEventListener("orientationchange", onResizeOrRotate);
+
+    return () => {
+      if (mql.removeEventListener) {
+        mql.removeEventListener("change", onMqlChange);
+      } else if (mql.removeListener) {
+        mql.removeListener(onMqlChange);
+      }
+      window.removeEventListener("resize", onResizeOrRotate);
+      window.removeEventListener("orientationchange", onResizeOrRotate);
+    };
+  }, []);
+
   const toggleTheme = () => {
     playHapticFeedback();
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -148,6 +202,10 @@ function App() {
     if (isEvaluated) return "";
     return evaluateExpression(inputStr, angleMode);
   }, [inputStr, isEvaluated, angleMode]);
+
+  const displayTokens = useMemo(() => {
+    return buildDisplayTokens(inputStr);
+  }, [inputStr]);
 
   useEffect(() => {
     if (cursorPos > inputStr.length) {
@@ -398,6 +456,10 @@ function App() {
 
     if (charEl && charEl.hasAttribute("data-index")) {
       const idx = parseInt(charEl.getAttribute("data-index"), 10);
+      if (charEl.classList.contains("input-separator")) {
+        setCursorPos(idx);
+        return;
+      }
       const rect = charEl.getBoundingClientRect();
       const isPastHalf = clientX > rect.left + rect.width / 2;
       setCursorPos(isPastHalf ? idx + 1 : idx);
@@ -696,12 +758,16 @@ function App() {
               onTouchMove={handleExpressionPointer}
               title="Tap or drag anywhere to place cursor"
             >
-              {inputStr.split("").map((ch, idx) => (
-                <span key={idx} data-index={idx} className="input-char">
-                  {cursorPos === idx && !isEvaluated && (
+              {displayTokens.map((token, tIdx) => (
+                <span
+                  key={tIdx}
+                  data-index={token.origIdx}
+                  className={`input-char ${token.isSeparator ? "input-separator" : ""}`}
+                >
+                  {cursorPos === token.origIdx && !token.isSeparator && !isEvaluated && (
                     <span className="navigation-line" aria-hidden="true" />
                   )}
-                  {ch}
+                  {token.ch}
                 </span>
               ))}
               {cursorPos === inputStr.length && !isEvaluated && (
@@ -740,7 +806,9 @@ function App() {
                   if (isEvaluated) setIsEvaluated(false);
                 }}
               >
-                {isEvaluated ? finalResult : livePreview || "\u00A0"}
+                {isEvaluated
+                  ? formatNumberWithCommas(finalResult)
+                  : formatNumberWithCommas(livePreview) || "\u00A0"}
               </div>
             </div>
           </section>

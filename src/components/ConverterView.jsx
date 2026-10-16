@@ -10,7 +10,6 @@ import {
   TEMPERATURE_UNITS,
   TIME_UNITS,
   CURRENCY_UNITS,
-  ETH_UNITS,
   convertNumberBase,
   convertDataStorage,
   convertMeasure,
@@ -20,8 +19,7 @@ import {
   convertTemperature,
   convertTime,
   convertCurrency,
-  convertEthUnits,
-  calculateGasFee
+  formatNumberWithCommas
 } from "../utils/conversionUtils";
 import { playHapticFeedback } from "../utils/haptics";
 import BackspaceIcon from "./BackspaceIcon";
@@ -89,13 +87,6 @@ function CategoryIcon({ type }) {
           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
       );
-    case "blockchain":
-      return (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-        </svg>
-      );
     default:
       return null;
   }
@@ -108,18 +99,6 @@ export default function ConverterView() {
   const [inputValue, setInputValue] = useState("100");
   const [fromUnit, setFromUnit] = useState("10");
   const [toUnit, setToUnit] = useState("2");
-
-  // Blockchain state
-  const [blockchainTab, setBlockchainTab] = useState("units"); // "units" | "gas"
-  const [activeGasField, setActiveGasField] = useState("gasLimit");
-  const [gasLimit, setGasLimit] = useState("21000");
-  const [baseFeeGwei, setBaseFeeGwei] = useState("30");
-  const [priorityFeeGwei, setPriorityFeeGwei] = useState("2");
-  const [maxFeeGwei, setMaxFeeGwei] = useState("50");
-  const [gasUsed, setGasUsed] = useState("21000");
-  const [ethPriceFiat, setEthPriceFiat] = useState("300000");
-  const [fiatCurrency, setFiatCurrency] = useState("INR"); // "INR" | "USD"
-  const [showEduInfo, setShowEduInfo] = useState(false);
 
   const handleCategoryChange = (catId) => {
     setActiveCategory(catId);
@@ -159,55 +138,12 @@ export default function ConverterView() {
       setFromUnit("USD");
       setToUnit("INR");
       setInputValue("100");
-    } else if (catId === "blockchain") {
-      setFromUnit("gwei");
-      setToUnit("ether");
-      setInputValue("1000000000");
-    }
-  };
-
-  const handleGasPreset = (limit, used, base = "30", tip = "2", max = "50") => {
-    playHapticFeedback();
-    setGasLimit(String(limit));
-    setGasUsed(String(used));
-    setBaseFeeGwei(String(base));
-    setPriorityFeeGwei(String(tip));
-    setMaxFeeGwei(String(max));
-  };
-
-  const getGasFieldSetter = (field) => {
-    switch (field) {
-      case "gasLimit":
-        return setGasLimit;
-      case "baseFee":
-        return setBaseFeeGwei;
-      case "priorityFee":
-        return setPriorityFeeGwei;
-      case "maxFee":
-        return setMaxFeeGwei;
-      case "gasUsed":
-        return setGasUsed;
-      case "ethPrice":
-        return setEthPriceFiat;
-      default:
-        return setGasLimit;
     }
   };
 
   // Dedicated on-screen keypad inputs (prevents mobile software keyboard from opening)
   const handleKeypadPress = (val) => {
     playHapticFeedback();
-    if (activeCategory === "blockchain" && blockchainTab === "gas") {
-      const currentSetter = getGasFieldSetter(activeGasField);
-
-      currentSetter((prev) => {
-        if (prev === "0" && val !== ".") return val;
-        if (val === "." && prev.includes(".")) return prev;
-        return prev + val;
-      });
-      return;
-    }
-
     setInputValue((prev) => {
       if (prev === "0" && val !== ".") return val;
       if (val === "." && prev.includes(".")) return prev;
@@ -217,23 +153,11 @@ export default function ConverterView() {
 
   const handleKeypadBackspace = () => {
     playHapticFeedback();
-    if (activeCategory === "blockchain" && blockchainTab === "gas") {
-      const currentSetter = getGasFieldSetter(activeGasField);
-      currentSetter((prev) => (prev.length > 1 ? prev.slice(0, -1) : "0"));
-      return;
-    }
-
     setInputValue((prev) => (prev.length > 1 ? prev.slice(0, -1) : "0"));
   };
 
   const handleKeypadClear = () => {
     playHapticFeedback();
-    if (activeCategory === "blockchain" && blockchainTab === "gas") {
-      const currentSetter = getGasFieldSetter(activeGasField);
-      currentSetter("0");
-      return;
-    }
-
     setInputValue("0");
   };
 
@@ -249,9 +173,6 @@ export default function ConverterView() {
 
   const handleToggleSign = () => {
     playHapticFeedback();
-    if (activeCategory === "blockchain" && blockchainTab === "gas") {
-      return;
-    }
     setInputValue((prev) => {
       if (!prev || prev === "0") return "0";
       if (prev.startsWith("-")) return prev.slice(1);
@@ -281,26 +202,25 @@ export default function ConverterView() {
       return convertTime(inputValue, fromUnit, toUnit);
     } else if (activeCategory === "currency") {
       return convertCurrency(inputValue, fromUnit, toUnit);
-    } else if (activeCategory === "blockchain") {
-      return convertEthUnits(inputValue, fromUnit, toUnit);
     }
     return "";
   }, [activeCategory, inputValue, fromUnit, toUnit]);
 
-  // Compute Full EIP-1559 Ethereum Gas Results
-  const gasResults = useMemo(() => {
-    return calculateGasFee({
-      gasLimit,
-      baseFeeGwei,
-      priorityFeeGwei,
-      maxFeeGwei,
-      gasUsed,
-      ethPriceFiat,
-      fiatCurrency
-    });
-  }, [gasLimit, baseFeeGwei, priorityFeeGwei, maxFeeGwei, gasUsed, ethPriceFiat, fiatCurrency]);
-
   const isHexInput = activeCategory === "bases" && fromUnit === "16";
+
+  const displayInputValue = useMemo(() => {
+    if (activeCategory === "bases" && fromUnit !== "10") {
+      return inputValue;
+    }
+    return formatNumberWithCommas(inputValue) || "0";
+  }, [activeCategory, fromUnit, inputValue]);
+
+  const displayConvertedResult = useMemo(() => {
+    if (activeCategory === "bases" && toUnit !== "10") {
+      return convertedResult || "0";
+    }
+    return formatNumberWithCommas(convertedResult) || "0";
+  }, [activeCategory, toUnit, convertedResult]);
 
   return (
     <div className="converter-container">
@@ -322,315 +242,106 @@ export default function ConverterView() {
         </div>
       </div>
 
-      {/* Submode Selector for Blockchain */}
-      {activeCategory === "blockchain" && (
-        <div className="submode-switcher">
+      {/* CONVERSION DISPLAY CARDS */}
+      <div className="converter-display-card">
+        {/* FROM CARD */}
+        <div className="conv-card from-card">
+          <div className="conv-card-meta">
+            <span className="conv-card-tag">FROM</span>
+            <select
+              className="conv-select"
+              value={fromUnit}
+              onChange={(e) => setFromUnit(e.target.value)}
+            >
+              {activeCategory === "bases" &&
+                NUMBER_BASES.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+
+              {activeCategory === "data" &&
+                COMPUTING_DATA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "measures" &&
+                MEASURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "area" &&
+                AREA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "weight" &&
+                WEIGHT_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "liquids" &&
+                LIQUID_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "temperature" &&
+                TEMPERATURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "time" &&
+                TIME_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "currency" &&
+                CURRENCY_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+          {/* Display value formatted with commas */}
+          <div className="conv-value-display active-from">{displayInputValue}</div>
+        </div>
+
+        <div className="conv-swap-divider">
           <button
-            className={`submode-btn ${blockchainTab === "units" ? "active" : ""}`}
-            onClick={() => {
-              playHapticFeedback();
-              setBlockchainTab("units");
-            }}
+            type="button"
+            className="conv-swap-btn"
+            onClick={handleSwapUnits}
+            title="Swap units"
+            aria-label="Swap units"
           >
-            ETH Units (Wei/Gwei/ETH)
-          </button>
-          <button
-            className={`submode-btn ${blockchainTab === "gas" ? "active" : ""}`}
-            onClick={() => {
-              playHapticFeedback();
-              setBlockchainTab("gas");
-            }}
-          >
-            Gas & Fee (EIP-1559)
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 10v12" />
+              <path d="M17 14V2" />
+              <path d="m11 6-4-4-4 4" />
+              <path d="m21 18-4 4-4-4" />
+            </svg>
           </button>
         </div>
-      )}
 
-      {/* CONVERSION DISPLAY CARDS OR EIP-1559 GAS CALCULATOR */}
-      {activeCategory !== "blockchain" || blockchainTab === "units" ? (
-        <div className="converter-display-card">
-          {/* FROM CARD */}
-          <div className="conv-card from-card">
-            <div className="conv-card-meta">
-              <span className="conv-card-tag">FROM</span>
-              <select
-                className="conv-select"
-                value={fromUnit}
-                onChange={(e) => setFromUnit(e.target.value)}
-              >
-                {activeCategory === "bases" &&
-                  NUMBER_BASES.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-
-                {activeCategory === "data" &&
-                  COMPUTING_DATA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "measures" &&
-                  MEASURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "area" &&
-                  AREA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "weight" &&
-                  WEIGHT_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "liquids" &&
-                  LIQUID_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "temperature" &&
-                  TEMPERATURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "time" &&
-                  TIME_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "currency" &&
-                  CURRENCY_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "blockchain" &&
-                  ETH_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            {/* Display value instead of native input to prevent software keyboard */}
-            <div className="conv-value-display active-from">{inputValue}</div>
-          </div>
-
-          <div className="conv-swap-divider">
-            <button
-              type="button"
-              className="conv-swap-btn"
-              onClick={handleSwapUnits}
-              title="Swap units"
-              aria-label="Swap units"
+        {/* TO CARD */}
+        <div className="conv-card to-card">
+          <div className="conv-card-meta">
+            <span className="conv-card-tag">TO</span>
+            <select
+              className="conv-select"
+              value={toUnit}
+              onChange={(e) => setToUnit(e.target.value)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M7 10v12" />
-                <path d="M17 14V2" />
-                <path d="m11 6-4-4-4 4" />
-                <path d="m21 18-4 4-4-4" />
-              </svg>
-            </button>
+              {activeCategory === "bases" &&
+                NUMBER_BASES.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+
+              {activeCategory === "data" &&
+                COMPUTING_DATA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "measures" &&
+                MEASURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "area" &&
+                AREA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "weight" &&
+                WEIGHT_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "liquids" &&
+                LIQUID_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "temperature" &&
+                TEMPERATURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "time" &&
+                TIME_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+
+              {activeCategory === "currency" &&
+                CURRENCY_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
           </div>
-
-          {/* TO CARD */}
-          <div className="conv-card to-card">
-            <div className="conv-card-meta">
-              <span className="conv-card-tag">TO</span>
-              <select
-                className="conv-select"
-                value={toUnit}
-                onChange={(e) => setToUnit(e.target.value)}
-              >
-                {activeCategory === "bases" &&
-                  NUMBER_BASES.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-
-                {activeCategory === "data" &&
-                  COMPUTING_DATA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "measures" &&
-                  MEASURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "area" &&
-                  AREA_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "weight" &&
-                  WEIGHT_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "liquids" &&
-                  LIQUID_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "temperature" &&
-                  TEMPERATURE_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "time" &&
-                  TIME_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "currency" &&
-                  CURRENCY_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-
-                {activeCategory === "blockchain" &&
-                  ETH_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            <div className="conv-value-display result-to">{convertedResult || "0"}</div>
-          </div>
+          <div className="conv-value-display result-to">{displayConvertedResult}</div>
         </div>
-      ) : (
-        /* ENHANCED EIP-1559 ETHEREUM GAS CALCULATOR */
-        <div className="gas-calculator-display">
-          {/* Presets Row */}
-          <div className="gas-presets-bar">
-            <span className="gas-preset-hint">Typical Presets:</span>
-            <button
-              className={`gas-preset-chip ${gasLimit === "21000" && gasUsed === "21000" ? "active" : ""}`}
-              onClick={() => handleGasPreset(21000, 21000, 30, 2, 50)}
-              title="Standard ETH transfer"
-            >
-              Standard (21k)
-            </button>
-            <button
-              className={`gas-preset-chip ${gasLimit === "65000" && gasUsed === "65000" ? "active" : ""}`}
-              onClick={() => handleGasPreset(65000, 65000, 30, 2, 50)}
-              title="ERC-20 token transfer"
-            >
-              ERC-20 (65k)
-            </button>
-            <button
-              className={`gas-preset-chip ${gasLimit === "160000" && gasUsed === "160000" ? "active" : ""}`}
-              onClick={() => handleGasPreset(160000, 160000, 30, 2, 50)}
-              title="Uniswap or Complex Swap"
-            >
-              Swap (160k)
-            </button>
-          </div>
-
-          {/* Validation Warnings */}
-          {gasResults.warnings && gasResults.warnings.length > 0 && (
-            <div className="gas-warning-banner">
-              ⚠️ {gasResults.warnings[0]}
-            </div>
-          )}
-
-          {/* 5-Parameter Interactive Input Chips */}
-          <div className="gas-fields-grid">
-            <button
-              className={`gas-field-chip ${activeGasField === "gasLimit" ? "active" : ""}`}
-              onClick={() => {
-                playHapticFeedback();
-                setActiveGasField("gasLimit");
-              }}
-            >
-              <span className="field-lbl">Gas Limit</span>
-              <span className="field-val">{gasLimit}</span>
-            </button>
-
-            <button
-              className={`gas-field-chip ${activeGasField === "gasUsed" ? "active" : ""}`}
-              onClick={() => {
-                playHapticFeedback();
-                setActiveGasField("gasUsed");
-              }}
-            >
-              <span className="field-lbl">Gas Used</span>
-              <span className="field-val">{gasUsed}</span>
-            </button>
-
-            <button
-              className={`gas-field-chip ${activeGasField === "baseFee" ? "active" : ""}`}
-              onClick={() => {
-                playHapticFeedback();
-                setActiveGasField("baseFee");
-              }}
-            >
-              <span className="field-lbl">Base (Gwei)</span>
-              <span className="field-val">{baseFeeGwei}</span>
-            </button>
-
-            <button
-              className={`gas-field-chip ${activeGasField === "priorityFee" ? "active" : ""}`}
-              onClick={() => {
-                playHapticFeedback();
-                setActiveGasField("priorityFee");
-              }}
-            >
-              <span className="field-lbl">Tip (Gwei)</span>
-              <span className="field-val">{priorityFeeGwei}</span>
-            </button>
-
-            <button
-              className={`gas-field-chip ${activeGasField === "maxFee" ? "active" : ""}`}
-              onClick={() => {
-                playHapticFeedback();
-                setActiveGasField("maxFee");
-              }}
-            >
-              <span className="field-lbl">Max Fee</span>
-              <span className="field-val">{maxFeeGwei}</span>
-            </button>
-          </div>
-
-          {/* Fee Output Summary Cards */}
-          <div className="gas-summary-card">
-            <div className="gas-main-val">
-              <span className="lbl">Transaction Fee:</span>
-              <span className="val eth">{gasResults.actualGasFeeEth} ETH</span>
-            </div>
-            <div className="gas-units-subrow">
-              <span className="gwei-val">{gasResults.actualGasFeeGwei?.toLocaleString()} Gwei</span>
-              <span className="bullet">•</span>
-              <span className="wei-val">{gasResults.actualGasFeeWei} Wei</span>
-            </div>
-
-            <div className="gas-sub-val">
-              <span>Effective Price: <strong>{gasResults.effectiveGasPriceGwei} Gwei</strong></span>
-              <span>Gas Used: <strong>{gasUsed} / {gasLimit} ({gasResults.gasUsedPercentage}%)</strong></span>
-            </div>
-            <div className="gas-sub-val">
-              <span>Max Cap Fee: <strong>{gasResults.maxPossibleFeeEth} ETH</strong> ({gasResults.maxPossibleFeeGwei?.toLocaleString()} Gwei)</span>
-            </div>
-
-            {/* Optional Fiat Estimation */}
-            <div className="gas-fiat-row">
-              <div className="fiat-calc-group">
-                <span className="fiat-lbl">Est. Fiat Cost:</span>
-                <span className="fiat-val">
-                  {fiatCurrency === "INR" ? "₹" : "$"}{gasResults.estimatedFiatCost}
-                </span>
-                <span className="fiat-note">
-                  (at {fiatCurrency === "INR" ? "₹" : "$"}{Number(ethPriceFiat).toLocaleString()}/ETH)
-                </span>
-              </div>
-              <div className="fiat-actions">
-                <button
-                  className="fiat-curr-toggle"
-                  onClick={() => {
-                    playHapticFeedback();
-                    setFiatCurrency((prev) => (prev === "INR" ? "USD" : "INR"));
-                  }}
-                >
-                  {fiatCurrency}
-                </button>
-                <button
-                  className={`fiat-price-chip ${activeGasField === "ethPrice" ? "active" : ""}`}
-                  onClick={() => {
-                    playHapticFeedback();
-                    setActiveGasField("ethPrice");
-                  }}
-                >
-                  Edit Price
-                </button>
-              </div>
-            </div>
-
-            {/* Educational Accordion Toggle */}
-            <button
-              className="gas-edu-toggle-btn"
-              onClick={() => {
-                playHapticFeedback();
-                setShowEduInfo(!showEduInfo);
-              }}
-            >
-              <span>ℹ️ How Ethereum Gas Works</span>
-              <span>{showEduInfo ? "▲" : "▼"}</span>
-            </button>
-
-            {showEduInfo && (
-              <div className="gas-edu-card">
-                <div className="edu-item">
-                  <strong>Base Fee vs Priority Fee:</strong> Base Fee is algorithmically set by Ethereum and burned (destroyed). Priority fee is a direct tip to the validator.
-                </div>
-                <div className="edu-item">
-                  <strong>Gas Used:</strong> Actual gas consumed ({gasUsed}). Fee uses Gas Used, not Limit!
-                </div>
-                <div className="edu-item">
-                  <strong>EIP-1559 Model:</strong> Effective Gas Price = min(Max Fee, Base Fee + Tip).
-                </div>
-                <div className="edu-item">
-                  <strong>Formula:</strong> Fee = {gasUsed} × {gasResults.effectiveGasPriceGwei} Gwei = {gasResults.actualGasFeeEth} ETH.
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Hexadecimal Extra Letters Row (if Base 16) */}
       {isHexInput && (

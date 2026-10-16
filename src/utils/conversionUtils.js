@@ -1,4 +1,4 @@
-// Comprehensive Unit and Blockchain Conversion Utilities
+// Comprehensive Unit Conversion Utilities
 
 export const CONVERSION_CATEGORIES = [
   { id: "bases", name: "Bases", iconType: "bases" },
@@ -9,8 +9,7 @@ export const CONVERSION_CATEGORIES = [
   { id: "liquids", name: "Liquids", iconType: "liquids" },
   { id: "temperature", name: "Temperature", iconType: "temperature" },
   { id: "time", name: "Time", iconType: "time" },
-  { id: "currency", name: "Currency", iconType: "currency" },
-  { id: "blockchain", name: "Blockchain", iconType: "blockchain" }
+  { id: "currency", name: "Currency", iconType: "currency" }
 ];
 
 // 1. Computing Units (Base storage relative to Bytes, and Number Bases)
@@ -217,143 +216,108 @@ export function convertCurrency(val, fromUnit, toUnit) {
   return Number.isInteger(converted) ? String(converted) : String(parseFloat(converted.toFixed(4)));
 }
 
-// 9. Blockchain (Ethereum / Web3 Units & Gas Calculator)
-export const ETH_UNITS = [
-  { id: "wei", name: "Wei", decimals: 0 },
-  { id: "kwei", name: "Kwei / Babbage", decimals: 3 },
-  { id: "mwei", name: "Mwei / Lovelace", decimals: 6 },
-  { id: "gwei", name: "Gwei / Shannon", decimals: 9 },
-  { id: "szabo", name: "Szabo", decimals: 12 },
-  { id: "finney", name: "Finney", decimals: 15 },
-  { id: "ether", name: "Ether (ETH)", decimals: 18 }
-];
+// ========================================
+// Number & Expression Comma Formatting Utilities
+// ========================================
 
-export function convertEthUnits(val, fromUnit, toUnit) {
-  if (!val || String(val).trim() === "" || isNaN(val)) return "";
-  try {
-    const fromDec = ETH_UNITS.find(u => u.id === fromUnit)?.decimals ?? 18;
-    const toDec = ETH_UNITS.find(u => u.id === toUnit)?.decimals ?? 18;
-    const diff = fromDec - toDec;
+/**
+ * Format a numeric string with comma separators every three digits.
+ * Supports integers, decimals, and negative numbers.
+ * Preserves special tokens like "Error", NaN, or exponential notation.
+ * e.g. "1000000" -> "1,000,000", "1234.567" -> "1,234.567"
+ */
+export function formatNumberWithCommas(val) {
+  if (val === null || val === undefined) return "";
+  const valStr = String(val);
+  if (
+    !valStr ||
+    valStr === "Error" ||
+    valStr === "NaN" ||
+    valStr === "Infinity" ||
+    valStr === "-Infinity" ||
+    valStr.includes("e") ||
+    valStr.includes("E")
+  ) {
+    return valStr;
+  }
 
-    if (diff === 0) return String(val);
+  const isNegative = valStr.startsWith("-");
+  const cleanStr = isNegative ? valStr.slice(1) : valStr;
+  const parts = cleanStr.split(".");
+  if (!/^\d+$/.test(parts[0])) {
+    return valStr;
+  }
 
-    const strVal = String(val).trim();
-    const [intPart, fracPart = ""] = strVal.split(".");
+  const formattedInt = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const res = parts.length > 1 ? `${formattedInt}.${parts[1]}` : formattedInt;
+  return isNegative ? `-${res}` : res;
+}
 
-    if (diff > 0) {
-      if (fracPart.length <= diff) {
-        const paddedFrac = fracPart.padEnd(diff, "0");
-        const combined = (intPart === "0" ? "" : intPart) + paddedFrac;
-        const clean = combined.replace(/^0+(?=\d)/, "");
-        return clean || "0";
+/**
+ * Format all integer parts of numbers within a mathematical expression string with commas.
+ * e.g. "1000+25000*300" -> "1,000+25,000*300"
+ * e.g. "sin(3600)+1000000.5" -> "sin(3,600)+1,000,000.5"
+ */
+export function formatExpressionWithCommas(expr) {
+  if (!expr || typeof expr !== "string") return expr || "";
+  return expr.replace(/(\d+)(\.\d+)?/g, (match, intPart, decPart) => {
+    const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return formattedInt + (decPart || "");
+  });
+}
+
+/**
+ * Builds tokens for interactive input display with placed cursor and comma separators.
+ * Each character maps back to its original index in `inputStr` for cursor positioning and clicks.
+ */
+export function buildDisplayTokens(inputStr) {
+  if (!inputStr) return [];
+
+  const tokens = [];
+  let inDecimal = false;
+  let numberBuffer = [];
+
+  const flushNumberBuffer = () => {
+    if (numberBuffer.length === 0) return;
+    const len = numberBuffer.length;
+    numberBuffer.forEach((item, idx) => {
+      tokens.push({
+        ch: item.ch,
+        origIdx: item.origIdx,
+        isSeparator: false
+      });
+      const distFromRight = len - 1 - idx;
+      if (distFromRight > 0 && distFromRight % 3 === 0) {
+        tokens.push({
+          ch: ",",
+          origIdx: item.origIdx + 1,
+          isSeparator: true
+        });
+      }
+    });
+    numberBuffer = [];
+  };
+
+  for (let i = 0; i < inputStr.length; i++) {
+    const ch = inputStr[i];
+    if (ch >= "0" && ch <= "9") {
+      if (inDecimal) {
+        tokens.push({ ch, origIdx: i, isSeparator: false });
       } else {
-        const scaledInt = intPart + fracPart.slice(0, diff);
-        const remainingFrac = fracPart.slice(diff);
-        const clean = `${scaledInt}.${remainingFrac}`.replace(/^0+(?=\d)/, "");
-        return clean || "0";
+        numberBuffer.push({ ch, origIdx: i });
       }
     } else {
-      const absDiff = Math.abs(diff);
-      const wholeStr = intPart.padStart(absDiff + 1, "0");
-      const splitIdx = wholeStr.length - absDiff;
-      let newInt = wholeStr.slice(0, splitIdx);
-      let newFrac = wholeStr.slice(splitIdx) + fracPart;
-      newFrac = newFrac.replace(/0+$/, "");
-      newInt = newInt.replace(/^0+(?=\d)/, "") || "0";
-      return newFrac ? `${newInt}.${newFrac}` : newInt;
+      flushNumberBuffer();
+      if (ch === ".") {
+        inDecimal = true;
+      } else {
+        inDecimal = false;
+      }
+      tokens.push({ ch, origIdx: i, isSeparator: false });
     }
-  } catch (e) {
-    return "Error";
   }
+  flushNumberBuffer();
+
+  return tokens;
 }
 
-// Full EIP-1559 Ethereum Gas Fee & Usage Calculator
-export function calculateGasFee({
-  gasLimit = 21000,
-  baseFeeGwei = 30,
-  priorityFeeGwei = 2,
-  maxFeeGwei = 50,
-  gasUsed = 21000,
-  ethPriceFiat = 300000,
-  fiatCurrency = "INR"
-}) {
-  const limit = parseFloat(gasLimit) || 0;
-  const base = parseFloat(baseFeeGwei) || 0;
-  const priority = parseFloat(priorityFeeGwei) || 0;
-  const maxFee = parseFloat(maxFeeGwei) || 0;
-  const used = parseFloat(gasUsed) || 0;
-  const ethPrice = parseFloat(ethPriceFiat) || 0;
-
-  let warning = "";
-  if (limit <= 0 || used <= 0) {
-    warning = "Gas limit and gas used must be positive numbers.";
-  } else if (used > limit) {
-    warning = "Gas Used cannot exceed Gas Limit.";
-  } else if (maxFee < base) {
-    warning = "Max Fee Per Gas cannot be lower than Base Fee.";
-  }
-
-  // EIP-1559 Formula:
-  // Effective Gas Price = min(Max Fee Per Gas, Base Fee + Priority Fee)
-  const effectiveGasPriceGwei = Math.min(maxFee, base + priority);
-
-  // Actual Priority Fee = min(Priority Fee, max(0, Max Fee Per Gas - Base Fee))
-  const actualPriorityFeeGwei = Math.min(priority, Math.max(0, maxFee - base));
-
-  // Fee breakdown components
-  const baseFeeComponentGwei = used * base;
-  const priorityFeeComponentGwei = used * actualPriorityFeeGwei;
-
-  // Actual Transaction Fee = Gas Used * Effective Gas Price
-  const actualGasFeeGwei = used * effectiveGasPriceGwei;
-  const actualGasFeeEth = actualGasFeeGwei / 1e9;
-
-  // Exact Wei using BigInt precision
-  let actualGasFeeWei = "0";
-  try {
-    const gweiScaled = Math.round(actualGasFeeGwei);
-    actualGasFeeWei = (BigInt(gweiScaled) * 1000000000n).toString();
-  } catch (e) {
-    actualGasFeeWei = String(Math.round(actualGasFeeGwei * 1e9));
-  }
-
-  // Maximum Possible Fee = Gas Limit * Max Fee Per Gas
-  const maxPossibleFeeGwei = limit * maxFee;
-  const maxPossibleFeeEth = maxPossibleFeeGwei / 1e9;
-
-  let maxPossibleFeeWei = "0";
-  try {
-    const maxGweiScaled = Math.round(maxPossibleFeeGwei);
-    maxPossibleFeeWei = (BigInt(maxGweiScaled) * 1000000000n).toString();
-  } catch (e) {
-    maxPossibleFeeWei = String(Math.round(maxPossibleFeeGwei * 1e9));
-  }
-
-  // Gas Used Percentage (do not exceed 100% when used > limit)
-  const gasUsedPct = limit > 0 ? Math.min(100, (used / limit) * 100) : 100;
-
-  // Optional Fiat Cost
-  const fiatCost = ethPrice > 0 ? (actualGasFeeEth * ethPrice).toFixed(2) : "0.00";
-
-  return {
-    limit,
-    used,
-    base,
-    priority,
-    maxFee,
-    effectiveGasPriceGwei,
-    actualPriorityFeeGwei,
-    baseFeeComponentGwei,
-    priorityFeeComponentGwei,
-    actualGasFeeGwei,
-    actualGasFeeEth: parseFloat(actualGasFeeEth.toFixed(8)),
-    actualGasFeeWei,
-    maxPossibleFeeGwei,
-    maxPossibleFeeEth: parseFloat(maxPossibleFeeEth.toFixed(8)),
-    maxPossibleFeeWei,
-    gasUsedPct: parseFloat(gasUsedPct.toFixed(1)),
-    warning,
-    fiatCost,
-    fiatCurrency
-  };
-}
