@@ -98,7 +98,9 @@ function App() {
     return localStorage.getItem("calculator-theme") || "light";
   });
 
-  const [calcMode, setCalcMode] = useState("basic");
+  const [calcMode, setCalcMode] = useState(() => {
+    return localStorage.getItem("calculator-mode") || "basic";
+  });
   const [angleMode, setAngleMode] = useState("deg");
 
   const [inputStr, setInputStr] = useState("0");
@@ -112,6 +114,22 @@ function App() {
   const expressionRef = useRef(null);
   const modeDropdownRef = useRef(null);
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+
+  const [isLandscape, setIsLandscape] = useState(() => {
+    return typeof window !== "undefined" && window.innerWidth > window.innerHeight;
+  });
+
+  useEffect(() => {
+    function handleOrientationChange() {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    }
+    window.addEventListener("resize", handleOrientationChange);
+    window.addEventListener("orientationchange", handleOrientationChange);
+    return () => {
+      window.removeEventListener("resize", handleOrientationChange);
+      window.removeEventListener("orientationchange", handleOrientationChange);
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -127,8 +145,18 @@ function App() {
 
   useEffect(() => {
     document.body.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("calculator-theme", theme);
+    const meta = document.getElementById("theme-color-meta");
+    if (meta) {
+      meta.setAttribute("content", theme === "dark" ? "#121826" : "#ffffff");
+    }
   }, [theme]);
+
+  // Persist calcMode across sessions
+  useEffect(() => {
+    localStorage.setItem("calculator-mode", calcMode);
+  }, [calcMode]);
 
   useEffect(() => {
     try {
@@ -140,58 +168,6 @@ function App() {
     }
   }, [history]);
 
-  // Auto-switch between basic and scientific mode based on orientation on mobile devices
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-
-    const mql = window.matchMedia("(orientation: landscape)");
-
-    const handleOrientation = (isLandscape) => {
-      // Apply to mobile/touch screens or devices where orientation indicates mobile rotation
-      const isMobile =
-        window.innerWidth <= 1024 && (window.innerHeight <= 600 || window.innerWidth <= 600 || "ontouchstart" in window);
-
-      if (isMobile) {
-        if (isLandscape) {
-          setCalcMode((prev) => (prev === "conversion" ? prev : "scientific"));
-        } else {
-          setCalcMode((prev) => (prev === "conversion" ? prev : "basic"));
-        }
-      }
-    };
-
-    // Initial check
-    handleOrientation(mql.matches || window.innerWidth > window.innerHeight);
-
-    const onMqlChange = (e) => {
-      handleOrientation(e.matches);
-    };
-
-    if (mql.addEventListener) {
-      mql.addEventListener("change", onMqlChange);
-    } else if (mql.addListener) {
-      mql.addListener(onMqlChange);
-    }
-
-    const onResizeOrRotate = () => {
-      const isLandscape =
-        window.matchMedia("(orientation: landscape)").matches || window.innerWidth > window.innerHeight;
-      handleOrientation(isLandscape);
-    };
-
-    window.addEventListener("resize", onResizeOrRotate);
-    window.addEventListener("orientationchange", onResizeOrRotate);
-
-    return () => {
-      if (mql.removeEventListener) {
-        mql.removeEventListener("change", onMqlChange);
-      } else if (mql.removeListener) {
-        mql.removeListener(onMqlChange);
-      }
-      window.removeEventListener("resize", onResizeOrRotate);
-      window.removeEventListener("orientationchange", onResizeOrRotate);
-    };
-  }, []);
 
   const toggleTheme = () => {
     playHapticFeedback();
@@ -815,55 +791,117 @@ function App() {
 
           {/* Keypad: Basic or Scientific */}
           {calcMode === "scientific" ? (
-            <section className="keypad scientific-keypad">
-              {/* Scientific Row 1: Functions */}
-              <button className="sci-fn" onClick={() => handleFunctionInsert("sin")}>sin</button>
-              <button className="sci-fn" onClick={() => handleFunctionInsert("cos")}>cos</button>
-              <button className="sci-fn" onClick={() => handleFunctionInsert("tan")}>tan</button>
-              <button className="sci-fn" onClick={() => handleFunctionInsert("ln")}>ln</button>
-              <button className="sci-fn" onClick={() => handleFunctionInsert("log")}>log</button>
+            isLandscape ? (
+              /* Landscape Scientific Keypad: 7 Columns (Left 3 Notations, Right 4 Basic/Numbers) × 5 Rows */
+              <section className="keypad scientific-keypad landscape-scientific-keypad">
+                {/* Row 1: sin cos tan | AC ⌫ % ÷ */}
+                <button className="sci-fn" onClick={() => handleFunctionInsert("sin")}>sin</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("cos")}>cos</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("tan")}>tan</button>
+                <button className="utility" onClick={handleClear}>AC</button>
+                <button className="utility" onClick={handleBackspace} aria-label="Backspace" title="Backspace">
+                  <BackspaceIcon />
+                </button>
+                <button className="utility" onClick={handlePercentage}>%</button>
+                <button className="operator" onClick={() => handleOperator("÷")}>÷</button>
 
-              {/* Scientific Row 2: Powers & Constants */}
-              <button className="sci-fn" onClick={() => handleOperator("^")}>xʸ</button>
-              <button className="sci-fn" onClick={() => insertAtCursor("√")}>√</button>
-              <button className="sci-fn" onClick={() => insertAtCursor("π")}>π</button>
-              <button className="sci-fn" onClick={() => insertAtCursor("e")}>e</button>
-              <button className="sci-fn" onClick={() => insertAtCursor("!")}>x!</button>
+                {/* Row 2: ln log xʸ | 7 8 9 × */}
+                <button className="sci-fn" onClick={() => handleFunctionInsert("ln")}>ln</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("log")}>log</button>
+                <button className="sci-fn" onClick={() => handleOperator("^")}>xʸ</button>
+                <button className="number" onClick={() => insertAtCursor("7")}>7</button>
+                <button className="number" onClick={() => insertAtCursor("8")}>8</button>
+                <button className="number" onClick={() => insertAtCursor("9")}>9</button>
+                <button className="operator" onClick={() => handleOperator("×")}>×</button>
 
-              {/* Scientific Row 3: Brackets & Clear */}
-              <button className="sci-fn" onClick={() => insertAtCursor("(")}>(</button>
-              <button className="sci-fn" onClick={() => insertAtCursor(")")}>)</button>
-              <button className="utility" onClick={handleClear}>AC</button>
-              <button className="utility" onClick={handleBackspace} aria-label="Backspace" title="Backspace">
-                <BackspaceIcon />
-              </button>
-              <button className="operator" onClick={() => handleOperator("÷")}>÷</button>
+                {/* Row 3: √ π e | 4 5 6 − */}
+                <button className="sci-fn" onClick={() => insertAtCursor("√")}>√</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("π")}>π</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("e")}>e</button>
+                <button className="number" onClick={() => insertAtCursor("4")}>4</button>
+                <button className="number" onClick={() => insertAtCursor("5")}>5</button>
+                <button className="number" onClick={() => insertAtCursor("6")}>6</button>
+                <button className="operator" onClick={() => handleOperator("−")}>−</button>
 
-              {/* Scientific Row 4: 7 8 9 % × */}
-              <button className="number" onClick={() => insertAtCursor("7")}>7</button>
-              <button className="number" onClick={() => insertAtCursor("8")}>8</button>
-              <button className="number" onClick={() => insertAtCursor("9")}>9</button>
-              <button className="utility" onClick={handlePercentage}>%</button>
-              <button className="operator" onClick={() => handleOperator("×")}>×</button>
+                {/* Row 4: x! ( ) | 1 2 3 + */}
+                <button className="sci-fn" onClick={() => insertAtCursor("!")}>x!</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("(")}>(</button>
+                <button className="sci-fn" onClick={() => insertAtCursor(")")}>)</button>
+                <button className="number" onClick={() => insertAtCursor("1")}>1</button>
+                <button className="number" onClick={() => insertAtCursor("2")}>2</button>
+                <button className="number" onClick={() => insertAtCursor("3")}>3</button>
+                <button className="operator" onClick={() => handleOperator("+")}>+</button>
 
-              {/* Scientific Row 5: 4 5 6 +/- − */}
-              <button className="number" onClick={() => insertAtCursor("4")}>4</button>
-              <button className="number" onClick={() => insertAtCursor("5")}>5</button>
-              <button className="number" onClick={() => insertAtCursor("6")}>6</button>
-              <button className="utility" onClick={handleToggleSign}>+/−</button>
-              <button className="operator" onClick={() => handleOperator("−")}>−</button>
+                {/* Row 5: DEG x² 1/x | +/- 0 . = */}
+                <button
+                  className="sci-fn sci-angle-btn"
+                  onClick={() => {
+                    playHapticFeedback();
+                    setAngleMode((prev) => (prev === "deg" ? "rad" : "deg"));
+                  }}
+                  title="Toggle Degrees / Radians"
+                >
+                  {angleMode.toUpperCase()}
+                </button>
+                <button className="sci-fn" onClick={() => insertAtCursor("^2")}>x²</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("1/(")}>1/x</button>
+                <button className="utility" onClick={handleToggleSign}>+/−</button>
+                <button className="number" onClick={() => insertAtCursor("0")}>0</button>
+                <button className="number" onClick={handleDecimal}>.</button>
+                <button className="equals" onClick={handleEquals}>=</button>
+              </section>
+            ) : (
+              /* Portrait Scientific Keypad: Reverted Original 5 Columns × 7 Rows */
+              <section className="keypad scientific-keypad portrait-scientific-keypad">
+                {/* Row 1: sin cos tan ln log */}
+                <button className="sci-fn" onClick={() => handleFunctionInsert("sin")}>sin</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("cos")}>cos</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("tan")}>tan</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("ln")}>ln</button>
+                <button className="sci-fn" onClick={() => handleFunctionInsert("log")}>log</button>
 
-              {/* Scientific Row 6: 1 2 3 . + */}
-              <button className="number" onClick={() => insertAtCursor("1")}>1</button>
-              <button className="number" onClick={() => insertAtCursor("2")}>2</button>
-              <button className="number" onClick={() => insertAtCursor("3")}>3</button>
-              <button className="number" onClick={handleDecimal}>.</button>
-              <button className="operator" onClick={() => handleOperator("+")}>+</button>
+                {/* Row 2: xʸ √ π e x! */}
+                <button className="sci-fn" onClick={() => handleOperator("^")}>xʸ</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("√")}>√</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("π")}>π</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("e")}>e</button>
+                <button className="sci-fn" onClick={() => insertAtCursor("!")}>x!</button>
 
-              {/* Scientific Row 7: 0 (3 columns) and = (2 columns: occupies col 4 & 5 directly below . and +) */}
-              <button className="number sci-col-3" onClick={() => insertAtCursor("0")}>0</button>
-              <button className="equals sci-col-2" onClick={handleEquals}>=</button>
-            </section>
+                {/* Row 3: ( ) AC ⌫ ÷ */}
+                <button className="sci-fn" onClick={() => insertAtCursor("(")}>(</button>
+                <button className="sci-fn" onClick={() => insertAtCursor(")")}>)</button>
+                <button className="utility" onClick={handleClear}>AC</button>
+                <button className="utility" onClick={handleBackspace} aria-label="Backspace" title="Backspace">
+                  <BackspaceIcon />
+                </button>
+                <button className="operator" onClick={() => handleOperator("÷")}>÷</button>
+
+                {/* Row 4: 7 8 9 % × */}
+                <button className="number" onClick={() => insertAtCursor("7")}>7</button>
+                <button className="number" onClick={() => insertAtCursor("8")}>8</button>
+                <button className="number" onClick={() => insertAtCursor("9")}>9</button>
+                <button className="utility" onClick={handlePercentage}>%</button>
+                <button className="operator" onClick={() => handleOperator("×")}>×</button>
+
+                {/* Row 5: 4 5 6 +/- − */}
+                <button className="number" onClick={() => insertAtCursor("4")}>4</button>
+                <button className="number" onClick={() => insertAtCursor("5")}>5</button>
+                <button className="number" onClick={() => insertAtCursor("6")}>6</button>
+                <button className="utility" onClick={handleToggleSign}>+/−</button>
+                <button className="operator" onClick={() => handleOperator("−")}>−</button>
+
+                {/* Row 6: 1 2 3 . + */}
+                <button className="number" onClick={() => insertAtCursor("1")}>1</button>
+                <button className="number" onClick={() => insertAtCursor("2")}>2</button>
+                <button className="number" onClick={() => insertAtCursor("3")}>3</button>
+                <button className="number" onClick={handleDecimal}>.</button>
+                <button className="operator" onClick={() => handleOperator("+")}>+</button>
+
+                {/* Row 7: 0 (span 3 cols), = (span 2 cols) */}
+                <button className="number sci-col-3" onClick={() => insertAtCursor("0")}>0</button>
+                <button className="equals sci-col-2" onClick={handleEquals}>=</button>
+              </section>
+            )
           ) : (
             <section className="keypad">
               {/* Row 1 */}

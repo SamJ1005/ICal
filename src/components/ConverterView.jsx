@@ -222,23 +222,31 @@ export default function ConverterView() {
     return formatNumberWithCommas(convertedResult) || "0";
   }, [activeCategory, toUnit, convertedResult]);
 
+  const currentCat = CONVERSION_CATEGORIES.find((c) => c.id === activeCategory);
+
   return (
     <div className="converter-container">
-      {/* Category Pills Header (Compact at top with Outline SVGs) */}
-      <div className="converter-category-scroll">
-        <div className="converter-category-tabs">
-          {CONVERSION_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              className={`converter-tab-btn ${activeCategory === cat.id ? "active" : ""}`}
-              onClick={() => handleCategoryChange(cat.id)}
-            >
-              <span className="tab-icon">
-                <CategoryIcon type={cat.iconType} />
-              </span>
-              <span className="tab-label">{cat.name}</span>
-            </button>
-          ))}
+      {/* Compact Apple-style Category Dropdown */}
+      <div className="converter-category-bar">
+        <div className="converter-category-select-pill">
+          <span className="category-select-icon">
+            <CategoryIcon type={currentCat?.iconType || "bases"} />
+          </span>
+          <select
+            className="converter-category-select"
+            value={activeCategory}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            aria-label="Conversion Category"
+          >
+            {CONVERSION_CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <svg className="category-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </div>
       </div>
 

@@ -1,0 +1,20 @@
+{
+  "name": "ICal",
+  "short_name": "ICal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0a66ff",
+  "icons": [
+    {
+      "src": "/Calculator.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Calculator.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -3,13 +3,13 @@
 export const CONVERSION_CATEGORIES = [
   { id: "bases", name: "Bases", iconType: "bases" },
   { id: "data", name: "Data", iconType: "data" },
+  { id: "currency", name: "Currency", iconType: "currency" },
   { id: "measures", name: "Measures", iconType: "measures" },
   { id: "area", name: "Area", iconType: "area" },
   { id: "weight", name: "Weight", iconType: "weight" },
   { id: "liquids", name: "Liquids", iconType: "liquids" },
   { id: "temperature", name: "Temperature", iconType: "temperature" },
-  { id: "time", name: "Time", iconType: "time" },
-  { id: "currency", name: "Currency", iconType: "currency" }
+  { id: "time", name: "Time", iconType: "time" }
 ];
 
 // 1. Computing Units (Base storage relative to Bytes, and Number Bases)
